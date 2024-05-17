@@ -1,44 +1,84 @@
 import { useState, useEffect } from 'react';
 import './App.css';
-import ContactList from './components/ContactList/ContactList';
-import SearchBox from './components/SearchBox/SearchBox';
-import ContactForm from './components/ContactForm/ContactForm';
-import contacts from './contacts.json';
+import { fetchArticlesWithTopic } from './articles-api';
+import SearchForm from './components/SearchBar/SearchBar';
+import Loader from './components/Loader/Loader';
+import Error from './components/ErrorMessage/ErrorMessage';
+import LoadMoreBtn from './components/LoadMoreBtn/LoadMoreBtn';
+import ImageModal from './components/ImageModal/ImageModal';
+import ImageGallery from './components/ImageGallery/ImageGallery';
+import { Toaster } from 'react-hot-toast';
 
-function App() {
-  const [contactList, setContactList] = useState(() => {
-    const storedContacts = localStorage.getItem('contacts');
-    return storedContacts ? JSON.parse(storedContacts) : [...contacts];
-  });
-
-  const [filter, setFilter] = useState('');
+const App = () => {
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState('');
 
   useEffect(() => {
-    localStorage.setItem('contacts', JSON.stringify(contactList));
-  }, [contactList]);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchArticlesWithTopic(query, page);
+        if (page === 1) {
+          setArticles(data);
+        } else {
+          setArticles(prevArticles => [...prevArticles, ...data]);
+        }
+      } catch (error) {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const addContact = newContact => {
-    setContactList([...contactList, newContact]);
+    if (query !== '') {
+      fetchData();
+    }
+  }, [query, page]);
+
+  const handleSearch = async topic => {
+    setArticles([]);
+    setError(false);
+    setQuery(topic);
+    setPage(1);
   };
 
-  const deleteContact = contactId => {
-    setContactList(prevContact => {
-      return prevContact.filter(contact => contact.id !== contactId);
-    });
+  const loadMore = async () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  const filteredContacts = contactList.filter(contact =>
-    contact.name.toLowerCase().includes(filter.toLowerCase())
-  );
+  const openModal = imageUrl => {
+    setSelectedImageUrl(imageUrl);
+    setModalIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalIsOpen(false);
+  };
 
   return (
-    <div>
-      <h1>Phonebook</h1>
-      <ContactForm onAddContact={addContact} />
-      <SearchBox value={filter} onFilter={setFilter} />
-      <ContactList contacts={filteredContacts} onDelete={deleteContact} />
-    </div>
+    <>
+      <SearchForm onSearch={handleSearch} />
+      {loading && <Loader />}
+      {error && <Error />}
+      {articles.length > 0 && (
+        <ImageGallery items={articles} onImageClick={openModal} />
+      )}
+      {articles.length > 0 && (
+        <LoadMoreBtn onClick={loadMore} loading={loading} />
+      )}
+      <ImageModal
+        isOpen={modalIsOpen}
+        onClose={closeModal}
+        imageUrl={selectedImageUrl}
+      />
+      <Toaster position="top-right" reverseOrder={false} />
+    </>
   );
-}
+};
 
 export default App;
