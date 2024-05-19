@@ -27,9 +27,6 @@ const ImageModal = ({ isOpen, onClose, imageUrl }) => {
       style={customStyles}
       contentLabel="Image Modal"
     >
-      <button onClick={onClose} className="close-btn">
-        &times;
-      </button>
       <img src={imageUrl} alt="Large" />
     </Modal>
   );

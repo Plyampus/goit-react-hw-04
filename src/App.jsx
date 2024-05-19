@@ -40,14 +40,14 @@ const App = () => {
     }
   }, [query, page]);
 
-  const handleSearch = async topic => {
+  const handleSearch = topic => {
     setArticles([]);
     setError(false);
     setQuery(topic);
     setPage(1);
   };
 
-  const loadMore = async () => {
+  const loadMore = () => {
     setPage(prevPage => prevPage + 1);
   };
 
@@ -58,6 +58,7 @@ const App = () => {
 
   const closeModal = () => {
     setModalIsOpen(false);
+    setSelectedImageUrl('');
   };
 
   return (
